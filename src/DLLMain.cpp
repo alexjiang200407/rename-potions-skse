@@ -141,7 +141,7 @@ namespace Hooks
 				return true;
 			}
 
-			func(a_self, a_control);
+			return func(a_self, a_control);
 		}
 
 		using func_t = decltype(thunk);
@@ -235,8 +235,10 @@ namespace Hooks
 
 		static void Install()
 		{
-			REL::Relocation<uintptr_t> target{ RELOCATION_ID(50449, 51354),
-				                               OFFSET(0x1CF, 0x0) };  // AlchemyMenu::HandleXButton
+			REL::Relocation<uintptr_t> target{
+				RELOCATION_ID(50449, 51354),
+				OFFSET(0x1CF, 0x1CA)
+			};  // AlchemyMenu::HandleXButton
 			stl::write_thunk_call<Actor__AddItem>(target.address());
 		}
 
@@ -269,8 +271,10 @@ namespace Hooks
 
 		static void Install()
 		{
-			REL::Relocation<uintptr_t> target{ RELOCATION_ID(50449, 51354),
-				                               OFFSET(0x22E, 0x0) };  // AlchemyMenu::HandleXButton
+			REL::Relocation<uintptr_t> target{
+				RELOCATION_ID(50449, 51354),
+				OFFSET(0x22E, 0x229)
+			};  // AlchemyMenu::HandleXButton
 			stl::write_thunk_call<AddedPotionNotification>(target.address());
 		}
 
@@ -303,13 +307,15 @@ namespace Hooks
 
 		static void Install()
 		{
-			REL::Relocation<uintptr_t> target1{ RELOCATION_ID(50526, 0x0), OFFSET(0x260, 0x0) };
+			REL::Relocation<uintptr_t> target1{ RELOCATION_ID(50526, 51412),
+				                                OFFSET(0x260, 0x2A7) };  // Button Appears
 			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target1.address());
 
-			REL::Relocation<uintptr_t> target2{ RELOCATION_ID(50324, 0x0), OFFSET(0x207, 0x0) };
+			REL::Relocation<uintptr_t> target2{ RELOCATION_ID(50324, 51239), 0x207 };  // Open Menu
 			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target2.address());
 
-			REL::Relocation<uintptr_t> target3{ RELOCATION_ID(50541, 0x0), OFFSET(0x139, 0x0) };
+			REL::Relocation<uintptr_t> target3{ RELOCATION_ID(50541, 51377),
+				                                OFFSET(0x139, 0xAD) };  // Hover over an element
 			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target3.address());
 		}
 	};
