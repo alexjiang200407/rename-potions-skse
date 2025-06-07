@@ -290,7 +290,7 @@ namespace Hooks
 			{
 				const char* str = a_val.GetString();
 
-				if (str[0] != '\0')
+				if (str && str[0] != '\0')
 				{
 					a_val.SetString("Rename Potion");
 				}
@@ -298,13 +298,20 @@ namespace Hooks
 			return func(a_self, a_data, a_idx, a_val);
 		}
 
-		static void Install()
-		{
-			REL::Relocation<uintptr_t> target{ RELOCATION_ID(50526, 0x0), OFFSET(0x260, 0x0) };
-			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target.address());
-		}
 		using func_t = decltype(thunk);
 		static inline REL::Relocation<func_t> func;
+
+		static void Install()
+		{
+			REL::Relocation<uintptr_t> target1{ RELOCATION_ID(50526, 0x0), OFFSET(0x260, 0x0) };
+			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target1.address());
+
+			REL::Relocation<uintptr_t> target2{ RELOCATION_ID(50324, 0x0), OFFSET(0x207, 0x0) };
+			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target2.address());
+
+			REL::Relocation<uintptr_t> target3{ RELOCATION_ID(50541, 0x0), OFFSET(0x139, 0x0) };
+			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target3.address());
+		}
 	};
 
 	struct AlchemyMenu__SetItemCardInfo
