@@ -150,6 +150,47 @@ namespace Hooks
 
 	struct Actor__AddItem
 	{
+		static void InventoryEntryAddTextDisplayExtraData(
+			RE::InventoryEntryData*& entry,
+			int                      a_count,
+			RE::TESBoundObject*      obj,
+			const char*              name)
+		{
+			if (entry && entry->extraLists)
+			{
+				for (const auto& list : *entry->extraLists)
+				{
+					if (list->HasType(RE::ExtraDataType::kTextDisplayData) &&
+					    strcmp(list->GetDisplayName(obj), name) == 0)
+					{
+						list->SetCount(list->GetCount() + a_count);
+						return;
+					}
+				}
+			}
+
+			auto* xData = RE::BSExtraData::Create<RE::ExtraTextDisplayData>();
+
+			if (!xData)
+			{
+				logger::error("Could not allocate ExtraTextDisplayData");
+				return;
+			}
+
+			xData->SetName(name);
+			auto* newList = new RE::ExtraDataList();
+
+			if (!newList)
+			{
+				logger::error("Could not allocate ExtraDataList");
+				return;
+			}
+
+			newList->Add(xData);
+			newList->SetCount(a_count);
+			entry->AddExtraList(newList);
+		}
+
 		static void thunk(
 			RE::Actor*          a_actor,
 			RE::TESBoundObject* a_item,
@@ -159,9 +200,9 @@ namespace Hooks
 		{
 			auto* alchemyMenu = Util::GetAlchemyMenu();
 
-			if (!alchemyMenu)
+			if (!alchemyMenu || !alchemyMenu->resultPotionEntry)
 			{
-				logger::error("Alchemy menu not found from Actor__AddItem");
+				logger::error("Alchemy menu or result potion not found from Actor__AddItem");
 				func(a_actor, a_item, a_extraDataList, a_count, a_fromRefr);
 				return;
 			}
@@ -178,28 +219,11 @@ namespace Hooks
 				{
 					if (entry && entry->object == a_item)
 					{
-						for (int i = 0; i < a_count; i++)
-						{
-							auto* xData = RE::BSExtraData::Create<RE::ExtraTextDisplayData>();
-
-							if (!xData)
-							{
-								logger::error("Could not allocate ExtraTextDisplayData");
-								return;
-							}
-
-							xData->SetName(alchemyMenu->resultPotionEntry->GetDisplayName());
-							auto* newList = new RE::ExtraDataList();
-
-							if (!newList)
-							{
-								logger::error("Could not allocate ExtraDataList");
-								return;
-							}
-
-							newList->Add(xData);
-							entry->AddExtraList(newList);
-						}
+						InventoryEntryAddTextDisplayExtraData(
+							entry,
+							a_count,
+							entry->object,
+							alchemyMenu->resultPotionEntry->GetDisplayName());
 					}
 				}
 			}
