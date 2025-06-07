@@ -41,7 +41,6 @@ namespace stl
 	void write_vfunc()
 	{
 		REL::Relocation<std::uintptr_t> vtbl{ F::VTABLE[0] };
-		logger::info("Written hook to 0x{:x}", F::VTABLE[0].address() + idx * sizeof(void*));
 		T::func = vtbl.write_vfunc(idx, T::thunk);
 	}
 }

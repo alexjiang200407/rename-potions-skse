@@ -1,3 +1,5 @@
+#include "RecipeMap.h"
+
 static constexpr std::uint32_t MAX_NAME_SIZE = 1024;
 
 namespace Log
@@ -126,9 +128,8 @@ namespace Hooks
 			if (*a_control == "YButton" && a_self->resultPotion)
 			{
 				std::array<RE::GFxValue, 2> args;
-				args[0]            = RE::GFxValue(a_self->resultPotion->fullName);
-				args[1]            = MAX_NAME_SIZE - 1;
-				auto* craftingMenu = RE::UI::GetSingleton()->GetMenu<RE::CraftingMenu>().get();
+				args[0] = RE::GFxValue(a_self->resultPotion->fullName);
+				args[1] = MAX_NAME_SIZE - 1;
 
 				RE::ControlMap::GetSingleton()->AllowTextInput(true);
 
@@ -281,12 +282,40 @@ namespace Hooks
 		static inline REL::Relocation<func_t> func;
 	};
 
+	struct AlchemyMenu__SetItemCardInfo
+	{
+		static bool thunk(RE::CraftingSubMenus::AlchemyMenu* a_self, RE::ItemCard* a_itemCard)
+		{
+			auto* alchemyMenu = Util::GetAlchemyMenu();
+
+			if (alchemyMenu && (alchemyMenu->resultPotion || alchemyMenu->unknownPotion))
+			{
+				if (const auto* name = RecipeMap::GetSingleton().GetCurrentRecipeName(a_self);
+				    name && a_itemCard->obj.HasMember("name"))
+				{
+					a_itemCard->obj.SetMember("name", name);
+					RE::RenameInventoryEntry(a_self->resultPotionEntry, nullptr, name);
+				}
+			}
+
+			return func(a_self, a_itemCard);
+		}
+
+		static void Install()
+		{
+			stl::write_vfunc<RE::CraftingSubMenus::AlchemyMenu, 7, AlchemyMenu__SetItemCardInfo>();
+		}
+		using func_t = decltype(thunk);
+		static inline REL::Relocation<func_t> func;
+	};
+
 	static void InstallAll()
 	{
 		Hooks::AlchemyMenu__ProcessUserEvent::Install();
 		Hooks::Actor__AddItem::Install();
 		Hooks::AddedPotionNotification::Install();
 		Hooks::AlchemyMenu__SetClearSelectionsButtonText::Install();
+		AlchemyMenu__SetItemCardInfo::Install();
 	}
 };
 
@@ -343,6 +372,7 @@ private:
 			if (useNewName)
 			{
 				RenameInventoryEntry(alchemyMenu->resultPotionEntry, nullptr, newName);
+				RecipeMap::GetSingleton().AddCurrentRecipeName(alchemyMenu, newName);
 			}
 
 			RE::CraftingSubmenu__RefreshItemCard(alchemyMenu, alchemyMenu->resultPotionEntry);
@@ -444,6 +474,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 		{
 			RE::ConsoleLog::GetSingleton()->Print("%s has been loaded", Version::PROJECT_C_STR);
 			MenuEventHandler::Register();
+		}
+		else if (message->type == SKSE::MessagingInterface::kPostLoad)
+		{
+			RecipeMap::GetSingleton().RegisterSerialization();
 		}
 	});
 
