@@ -123,7 +123,6 @@ namespace Hooks
 			else
 				return func(a_self, a_control);
 
-			bool ret = false;
 			if (*a_control == "YButton" && a_self->resultPotion)
 			{
 				std::array<RE::GFxValue, 2> args;
@@ -141,7 +140,7 @@ namespace Hooks
 				return true;
 			}
 
-			return func(a_self, a_control);
+			func(a_self, a_control);
 		}
 
 		using func_t = decltype(thunk);
@@ -253,13 +252,43 @@ namespace Hooks
 		static inline REL::Relocation<func_t> func;
 	};
 
+	struct AlchemyMenu__SetClearSelectionsButtonText
+	{
+		static bool thunk(
+			RE::GFxValue::ObjectInterface* a_self,
+			void*                          a_data,
+			std::uint32_t                  a_idx,
+			RE::GFxValue&                  a_val)
+		{
+			if (a_val.IsString())
+			{
+				const char* str = a_val.GetString();
+
+				if (str[0] != '\0')
+				{
+					a_val.SetString("Rename Potion");
+				}
+			}
+			return func(a_self, a_data, a_idx, a_val);
+		}
+
+		static void Install()
+		{
+			REL::Relocation<uintptr_t> target{ RELOCATION_ID(50526, 0x0), OFFSET(0x260, 0x0) };
+			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target.address());
+		}
+		using func_t = decltype(thunk);
+		static inline REL::Relocation<func_t> func;
+	};
+
 	static void InstallAll()
 	{
 		Hooks::AlchemyMenu__ProcessUserEvent::Install();
 		Hooks::Actor__AddItem::Install();
 		Hooks::AddedPotionNotification::Install();
+		Hooks::AlchemyMenu__SetClearSelectionsButtonText::Install();
 	}
-}
+};
 
 class MenuEventHandler : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
 {
@@ -274,10 +303,10 @@ private:
 	MenuEventHandler() = default;
 
 	void HandleAlchemyMenuOpen(
-		RE::CraftingMenu*                  craftingMenu,
+		RE::CraftingMenu*                  a_craftingMenu,
 		RE::CraftingSubMenus::AlchemyMenu* a_alchemyMenu)
 	{
-		if (!craftingMenu->fxDelegate)
+		if (!a_craftingMenu->fxDelegate)
 		{
 			logger::error("Could not find fxDelegate for crafting menu");
 			return;
@@ -286,7 +315,7 @@ private:
 		RE::FxDelegate::CallbackDefn callback;
 
 		// Not sure what this does but uncommented causes crashes when exit
-		//callback.handler.reset(craftingMenu);
+		// callback.handler.reset(craftingMenu);
 
 		callback.callback = [](const RE::FxDelegateArgs& a_arg) {
 			logger::info("Ended Item Renaming");
@@ -302,18 +331,24 @@ private:
 
 			RE::ControlMap::GetSingleton()->AllowTextInput(false);
 
-			if (!useNewName)
-				return;
-
 			auto* alchemyMenu = Util::GetAlchemyMenu();
 
-			if (alchemyMenu && alchemyMenu->resultPotionEntry)
+			if (!alchemyMenu || !alchemyMenu->resultPotionEntry)
+			{
+				logger::error(
+					"Could not find alchemy menu and result potion from EndItemRename callback");
+				return;
+			}
+
+			if (useNewName)
 			{
 				RenameInventoryEntry(alchemyMenu->resultPotionEntry, nullptr, newName);
-				RE::CraftingSubmenu__RefreshItemCard(alchemyMenu, alchemyMenu->resultPotionEntry);
 			}
+
+			RE::CraftingSubmenu__RefreshItemCard(alchemyMenu, alchemyMenu->resultPotionEntry);
 		};
-		craftingMenu->fxDelegate->callbacks.Add("EndItemRename", callback);
+		a_craftingMenu->fxDelegate->callbacks.Add("EndItemRename", callback);
+		logger::info("{}", std::uintptr_t(&a_alchemyMenu->buttonText));
 	}
 
 	RE::BSEventNotifyControl ProcessEvent(

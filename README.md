@@ -6,6 +6,7 @@ CommonLibSSE Template for my mods. Using Po3's CommonLibSSE fork.
 * SKSE
 * Address Library for SKSE (for both 1.6.x and 1.5.x).
 * Windows OS
+* SkyUI
 
 ## Build Requirements
 
