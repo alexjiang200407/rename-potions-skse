@@ -151,19 +151,20 @@ namespace Hooks
 	struct Actor__AddItem
 	{
 		static void InventoryEntryAddTextDisplayExtraData(
-			RE::InventoryEntryData*& entry,
+			RE::InventoryEntryData*& a_entry,
 			int                      a_count,
-			RE::TESBoundObject*      obj,
-			const char*              name)
+			RE::TESBoundObject*      a_obj,
+			const char*              a_name)
 		{
-			if (entry && entry->extraLists)
+			if (a_entry && a_entry->extraLists)
 			{
-				for (const auto& list : *entry->extraLists)
+				for (const auto& list : *a_entry->extraLists)
 				{
 					if (list->HasType(RE::ExtraDataType::kTextDisplayData) &&
-					    strcmp(list->GetDisplayName(obj), name) == 0)
+					    strcmp(list->GetDisplayName(a_obj), a_name) == 0)
 					{
-						list->SetCount(list->GetCount() + a_count);
+						// Might overflow
+						list->SetCount(static_cast<uint16_t>(list->GetCount() + a_count));
 						return;
 					}
 				}
@@ -177,7 +178,7 @@ namespace Hooks
 				return;
 			}
 
-			xData->SetName(name);
+			xData->SetName(a_name);
 			auto* newList = new RE::ExtraDataList();
 
 			if (!newList)
@@ -187,8 +188,8 @@ namespace Hooks
 			}
 
 			newList->Add(xData);
-			newList->SetCount(a_count);
-			entry->AddExtraList(newList);
+			newList->SetCount(static_cast<uint16_t>(a_count));
+			a_entry->AddExtraList(newList);
 		}
 
 		static void thunk(
@@ -335,10 +336,10 @@ namespace Hooks
 
 	static void InstallAll()
 	{
-		Hooks::AlchemyMenu__ProcessUserEvent::Install();
-		Hooks::Actor__AddItem::Install();
-		Hooks::AddedPotionNotification::Install();
-		Hooks::AlchemyMenu__SetClearSelectionsButtonText::Install();
+		AlchemyMenu__ProcessUserEvent::Install();
+		Actor__AddItem::Install();
+		AddedPotionNotification::Install();
+		AlchemyMenu__SetClearSelectionsButtonText::Install();
 		AlchemyMenu__SetItemCardInfo::Install();
 	}
 };
@@ -406,8 +407,8 @@ private:
 	}
 
 	RE::BSEventNotifyControl ProcessEvent(
-		const RE::MenuOpenCloseEvent*               a_event,
-		RE::BSTEventSource<RE::MenuOpenCloseEvent>* a_eventSource) override
+		const RE::MenuOpenCloseEvent* a_event,
+		RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
 	{
 		logger::info(
 			"{} menu `{}`",
