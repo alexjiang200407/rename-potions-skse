@@ -121,11 +121,15 @@ namespace Hooks
 		static bool thunk(RE::CraftingSubMenus::AlchemyMenu* a_self, RE::BSFixedString* a_control)
 		{
 			if (a_control)
-				logger::info("{}", a_control->c_str());
+				logger::info("Captured `{}`", a_control->c_str());
 			else
 				return func(a_self, a_control);
 
-			if (*a_control == "YButton" && a_self->resultPotion)
+			if (*a_control == RE::UserEvents::GetSingleton()->run && a_self->resultPotion)
+			{
+				return func(a_self, &RE::UserEvents::GetSingleton()->yButton);
+			}
+			else if (*a_control == RE::UserEvents::GetSingleton()->yButton && a_self->resultPotion)
 			{
 				std::array<RE::GFxValue, 2> args;
 				args[0] = RE::GFxValue(a_self->resultPotion->fullName);
@@ -417,10 +421,17 @@ private:
 				return;
 			}
 
-			if (useNewName)
+			if (useNewName && newName)
 			{
-				RenameInventoryEntry(alchemyMenu->resultPotionEntry, nullptr, newName);
-				RecipeMap::GetSingleton().AddCurrentRecipeName(alchemyMenu, newName);
+				if (strlen(newName) != 0)
+				{
+					RenameInventoryEntry(alchemyMenu->resultPotionEntry, nullptr, newName);
+					RecipeMap::GetSingleton().AddCurrentRecipeName(alchemyMenu, newName);
+				}
+				else
+				{
+					RE::DebugNotification("Potion name can't be empty");
+				}
 			}
 
 			RE::CraftingSubmenu__RefreshItemCard(alchemyMenu, alchemyMenu->resultPotionEntry);
@@ -433,13 +444,10 @@ private:
 		const RE::MenuOpenCloseEvent* a_event,
 		RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
 	{
-		logger::info(
-			"{} menu `{}`",
-			a_event->opening ? "Opening" : "Closing",
-			a_event->menuName.c_str());
-
 		if (a_event->menuName == RE::CraftingMenu::MENU_NAME)
 		{
+			logger::info("Opening Crafting Menu...");
+
 			RE::CraftingMenu* craftingMenu;
 			auto*             alchemyMenu = Util::GetAlchemyMenu(&craftingMenu);
 
