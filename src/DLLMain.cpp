@@ -188,7 +188,7 @@ namespace Hooks
 			}
 
 			newList->Add(xData);
-			newList->SetCount(static_cast<uint16_t>(a_count));
+			newList->SetCount(static_cast<uint16_t>(a_count));  // Might overflow
 			a_entry->AddExtraList(newList);
 		}
 
@@ -213,6 +213,14 @@ namespace Hooks
 			func(a_actor, a_item, a_extraDataList, a_count, a_fromRefr);
 			logger::info("After AddItem");
 			Log::PrintInventoryEntryInfo(a_item->formID);
+
+			// Same as default
+			if (alchemyMenu->resultPotion->fullName ==
+			    alchemyMenu->resultPotionEntry->GetDisplayName())
+			{
+				logger::info("Same as default");
+				return;
+			}
 
 			if (auto* changes = a_actor->GetInventoryChanges(false); changes && changes->entryList)
 			{
@@ -256,7 +264,9 @@ namespace Hooks
 			const char*         a_name)
 		{
 			if (auto* alchemyMenu = Util::GetAlchemyMenu();
-			    alchemyMenu && alchemyMenu->resultPotionEntry)
+			    alchemyMenu && alchemyMenu->resultPotionEntry && alchemyMenu->resultPotion &&
+			    alchemyMenu->resultPotion->fullName !=
+			        alchemyMenu->resultPotionEntry->GetDisplayName())
 			{
 				func(
 					a_boundObj,
@@ -296,7 +306,7 @@ namespace Hooks
 
 				if (str && str[0] != '\0')
 				{
-					a_val.SetString("Rename Potion");
+					a_val.SetString("Rename Potion");  // Add localization
 				}
 			}
 			return func(a_self, a_data, a_idx, a_val);
@@ -314,8 +324,8 @@ namespace Hooks
 			REL::Relocation<uintptr_t> target2{ RELOCATION_ID(50324, 51239), 0x207 };  // Open Menu
 			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target2.address());
 
-			REL::Relocation<uintptr_t> target3{ RELOCATION_ID(50541, 51377),
-				                                OFFSET(0x139, 0xAD) };  // Hover over an element
+			REL::Relocation<uintptr_t> target3{ RELOCATION_ID(50541, 51424),
+				                                0x139 };  // Hover over an element
 			stl::write_thunk_call<AlchemyMenu__SetClearSelectionsButtonText>(target3.address());
 		}
 	};
