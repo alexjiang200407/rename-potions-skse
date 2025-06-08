@@ -72,7 +72,7 @@ endif ()
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
 
-project(RenamePotionsSKSE VERSION 0.0.1 LANGUAGES CXX)
+project(RenamePotionsSKSE VERSION 1.0.0 LANGUAGES CXX)
 
 configure_file(
 	${CMAKE_CURRENT_SOURCE_DIR}/cmake/Version.h.in

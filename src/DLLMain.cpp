@@ -125,11 +125,12 @@ namespace Hooks
 			else
 				return func(a_self, a_control);
 
-			if (*a_control == RE::UserEvents::GetSingleton()->run && a_self->resultPotion)
-			{
-				return func(a_self, &RE::UserEvents::GetSingleton()->yButton);
-			}
-			else if (*a_control == RE::UserEvents::GetSingleton()->yButton && a_self->resultPotion)
+			// Conflicts with many other UI Control mods
+			//if (*a_control == RE::UserEvents::GetSingleton()->run && a_self->resultPotion)
+			//{
+			//	return func(a_self, &RE::UserEvents::GetSingleton()->yButton);
+			//}
+			if (*a_control == RE::UserEvents::GetSingleton()->yButton && a_self->resultPotion)
 			{
 				std::array<RE::GFxValue, 2> args;
 				args[0] = RE::GFxValue(a_self->resultPotion->fullName);
